@@ -1,0 +1,19 @@
+# 抓取与解析
+scrapling[fetchers]>=0.4.10
+trafilatura>=2.0
+feedparser>=6.0
+googlenewsdecoder>=0.1.7
+markdownify>=0.13
+
+# 图片处理（正文配图压缩为 WebP）
+Pillow>=10.4
+
+# AI 提炼
+anthropic>=1.0
+
+# 数据与存储
+supabase>=2.7
+boto3>=1.35          # Cloudflare R2 走 S3 兼容 API
+
+# 其他
+python-dotenv>=1.0
