@@ -4,6 +4,8 @@ trafilatura>=2.0
 feedparser>=6.0
 googlenewsdecoder>=0.1.7
 markdownify>=0.13
+readability-lxml>=0.8         # trafilatura 拿不到正文时的退路
+requests>=2.32                # 配图下载（带 Referer 绕防盗链）
 
 # 图片处理（正文配图压缩为 WebP）
 Pillow>=10.4
