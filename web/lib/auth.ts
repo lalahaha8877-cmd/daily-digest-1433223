@@ -1,10 +1,11 @@
-import { cookies } from 'next/headers'
-
 /**
  * 整站单口令保护。对应后端需求文档 §6.3 第 1 条。
  *
  * session 值 = HMAC-SHA256(SESSION_SECRET, "v1:" + exp) + "." + exp
  * 无状态、不落库；改 SESSION_SECRET 即可让所有既有会话失效。
+ *
+ * 本文件被 proxy.ts 引用，必须保持运行时中立：不要 import next/headers
+ * 之类只能在 Server Component / Route Handler 里用的 API。
  */
 const COOKIE_NAME = 'session'
 const MAX_AGE = 60 * 60 * 24 * 30 // 30 天
@@ -60,12 +61,6 @@ export function checkPassword(input: string): boolean {
   const expected = process.env.APP_PASSWORD
   if (!expected) throw new Error('缺少 APP_PASSWORD 环境变量')
   return timingSafeEqual(input, expected)
-}
-
-/** Server Component 里判断当前请求是否已登录。 */
-export async function isAuthed(): Promise<boolean> {
-  const store = await cookies()
-  return verifySession(store.get(COOKIE_NAME)?.value)
 }
 
 export const SESSION_COOKIE = COOKIE_NAME

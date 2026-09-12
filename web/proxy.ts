@@ -5,10 +5,16 @@ import { SESSION_COOKIE, verifySession } from '@/lib/auth'
 /**
  * 整站口令保护。对应后端需求文档 §6.4。
  * 页面路由未登录 → 302 /login?next=<原路径>；/api/* → 401 JSON。
+ *
+ * 文件名是 proxy.ts 而非 middleware.ts：Next.js 16 已把 middleware 约定
+ * 重命名为 proxy，且两者运行时不同 —— 旧名沿用 Edge 运行时（构建产物落在
+ * server/edge/chunks/ 并套 edge-wrapper），新名默认 Node.js 运行时。
+ * 部署到 Vercel 后 Edge 版本以 MIDDLEWARE_INVOCATION_FAILED 崩溃，改名后
+ * 才跑通。函数名也必须同步改成 proxy，否则 Next 找不到入口。
  */
 const PUBLIC_PATHS = ['/login', '/api/auth/login']
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   const res = NextResponse.next()
