@@ -10,6 +10,7 @@ import remarkGfm from 'remark-gfm'
  *  · 禁用 raw HTML（不加 rehype-raw）—— 全文来自外部站点，是不可信内容
  *  · 所有链接强制 target=_blank rel="noopener noreferrer nofollow"
  *  · 图片懒加载 + 失败降级为灰色占位文字，不显示浏览器裂图图标
+ *  · 只含图片的段落不包 <p> —— 否则 <figure> 嵌在 <p> 里会触发水合失败
  *  · 表格与代码块套 overflow-x 容器，页面 body 永不横向滚动
  */
 export default function MarkdownView({ children }: { children: string }) {
@@ -23,6 +24,22 @@ export default function MarkdownView({ children }: { children: string }) {
           </a>
         ),
         img: ({ src, alt }) => <ArticleImage src={typeof src === 'string' ? src : ''} alt={alt ?? ''} />,
+        // 图片单独成行时 Markdown 会包一层 <p>，而 ArticleImage 渲染的是
+        // <figure> + <figcaption> —— 两者都不允许作为 <p> 的后代。浏览器解析
+        // 时会自动闭合 <p>，服务端 HTML 与客户端 DOM 因此对不上，React 水合
+        // 失败、整页交互失效。所以只含图片的段落不加 <p> 包裹。
+        p: ({ node, children }) => {
+          const kids = node?.children ?? []
+          const onlyImage =
+            kids.length > 0 &&
+            kids.some((c) => c.type === 'element' && c.tagName === 'img') &&
+            kids.every(
+              (c) =>
+                (c.type === 'element' && c.tagName === 'img') ||
+                (c.type === 'text' && !c.value.trim()),
+            )
+          return onlyImage ? <>{children}</> : <p>{children}</p>
+        },
         table: ({ children }) => (
           <div className="table-scroll">
             <table>{children}</table>
