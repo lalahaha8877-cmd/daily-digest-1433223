@@ -60,8 +60,16 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          # 配图后端：不设则默认 supabase，无需下面四项
-          IMAGES_BACKEND: ${{ vars.IMAGES_BACKEND }}
+          # 下面两项必须带 `|| '默认值'`：Variable 未设置时 ${{ vars.X }} 展开成
+          # **空串**（环境变量存在但为空），Python 侧的 os.environ.get(name, default)
+          # 拿不到默认值。config.py 的 _str_env 也做了同样的兜底，两边都防一道。
+          #
+          # AI 开关。留 false 则完全不调 Anthropic，也不花钱，
+          # 简报按文章标题机械生成。想开 AI：Settings → Variables 加
+          # AI_ENABLED=true，并把 ANTHROPIC_API_KEY 填进 Secrets。
+          AI_ENABLED: ${{ vars.AI_ENABLED || 'false' }}
+          # 配图后端：supabase（默认，无需绑卡）或 r2。选 r2 才需要下面四项。
+          IMAGES_BACKEND: ${{ vars.IMAGES_BACKEND || 'supabase' }}
           # 只有 IMAGES_BACKEND=r2 时才需要；没配这几个 Secret 也不会报错
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}

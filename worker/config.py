@@ -26,14 +26,25 @@ def _require(name: str) -> str:
     return val
 
 
+def _str_env(name: str, default: str) -> str:
+    """读字符串环境变量，**空串按未设置处理**。
+
+    不能直接用 os.environ.get(name, default)：GitHub Actions 里
+    `FOO: ${{ vars.FOO }}` 在 Variable 未设置时会把 FOO 设成空串而不是不设，
+    默认值就永远拿不到。曾因此在 IMAGES_BACKEND 上 import 期直接崩。
+    """
+    raw = os.environ.get(name)
+    return raw.strip() if raw and raw.strip() else default
+
+
 # ── 时区 ─────────────────────────────────────────────────
 # 数据库全用 timestamptz(UTC)，但 run_date / digest_date 是 date，
 # 必须按用户时区算 —— 否则 UTC 00:00 触发时会算成前一天（§4.4）。
-USER_TZ = ZoneInfo(os.environ.get("USER_TZ", "Asia/Kuala_Lumpur"))
+USER_TZ = ZoneInfo(_str_env("USER_TZ", "Asia/Kuala_Lumpur"))
 
 # ── 模型 ─────────────────────────────────────────────────
-MODEL_SCREEN = os.environ.get("MODEL_SCREEN", "claude-haiku-4-5-20251001")
-MODEL_DISTILL = os.environ.get("MODEL_DISTILL", "claude-sonnet-5")
+MODEL_SCREEN = _str_env("MODEL_SCREEN", "claude-haiku-4-5-20251001")
+MODEL_DISTILL = _str_env("MODEL_DISTILL", "claude-sonnet-5")
 
 # 是否启用 AI（预筛 + 提炼）。关掉就完全不需要 ANTHROPIC_API_KEY。
 #
@@ -43,7 +54,7 @@ MODEL_DISTILL = os.environ.get("MODEL_DISTILL", "claude-sonnet-5")
 #
 # 重要：全文已经归档了，所以以后想开 AI，可以拿存档重新生成历史简报，
 # 不用重新抓一遍。先免费跑起来、以后再决定要不要付费，代价很低。
-AI_ENABLED = os.environ.get("AI_ENABLED", "true").strip().lower() not in (
+AI_ENABLED = _str_env("AI_ENABLED", "true").lower() not in (
     "false", "0", "no", "off",
 )
 
@@ -91,7 +102,7 @@ BUCKET_IMAGES = "images"
 # 什么时候该切到 r2：关键词数上到两位数、把 retention_days 调很长、
 # 或者大量使用收藏（收藏豁免清理、会一直累积）。切换只需改这个环境变量，
 # 业务代码一行不动。切换后旧图仍在 Supabase，需要的话得自行搬迁。
-IMAGES_BACKEND = os.environ.get("IMAGES_BACKEND", "supabase").strip().lower()
+IMAGES_BACKEND = _str_env("IMAGES_BACKEND", "supabase").lower()
 if IMAGES_BACKEND not in ("supabase", "r2"):
     raise RuntimeError(f"IMAGES_BACKEND 只能是 supabase 或 r2，实际是 {IMAGES_BACKEND!r}")
 
@@ -125,7 +136,7 @@ class Secrets:
 
     @property
     def r2_bucket_images(self) -> str:
-        return os.environ.get("R2_BUCKET_IMAGES", BUCKET_IMAGES)
+        return _str_env("R2_BUCKET_IMAGES", BUCKET_IMAGES)
 
 
 secrets = Secrets()

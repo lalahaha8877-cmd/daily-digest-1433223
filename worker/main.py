@@ -124,8 +124,14 @@ def main(argv: list[str] | None = None) -> int:
         # 提前触碰一次密钥，缺失时以 EXIT_FATAL 退出而不是跑到一半才炸
         config.secrets.supabase_url
         config.secrets.supabase_service_key
+        # 开了 AI 却没给 Key，原先要等抓完全文、跑到 distill 才炸，
+        # 白花十几分钟还留下一半写好的数据。在这里就拦住。
+        if config.AI_ENABLED:
+            config.secrets.anthropic_api_key
     except RuntimeError as e:
         log.error("启动检查失败：%s", e)
+        if "ANTHROPIC_API_KEY" in str(e):
+            log.error("要么补上 ANTHROPIC_API_KEY，要么设 AI_ENABLED=false 走无 AI 模式")
         return EXIT_FATAL
 
     return args.func(args)
