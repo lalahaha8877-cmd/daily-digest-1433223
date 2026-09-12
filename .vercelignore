@@ -1,0 +1,25 @@
+# Vercel CLI 上传时的忽略清单（.vercelignore 存在时会取代 .gitignore 的作用）。
+#
+# 首要目的是安全：项目根的 .env 有 Supabase service_role 密钥，
+# web/.env.local 里的 APP_PASSWORD 是本地测试值 dev-local-test ——
+# 若被上传，Next.js 构建时会读到它并覆盖掉 Vercel 项目里配的正式口令。
+
+.env
+.env.*
+**/.env.local
+**/.env.*.local
+
+# 采集端是 Python，跑在 GitHub Actions，不参与前端构建
+worker/
+scripts/
+db/
+.venv/
+**/__pycache__/
+
+# 构建产物与依赖，Vercel 自己会装/建
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+
+.git/
