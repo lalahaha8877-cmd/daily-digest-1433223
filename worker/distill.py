@@ -84,6 +84,8 @@ def extract_json(text: str) -> dict:
 # ── 第一段：预筛 ─────────────────────────────────────────
 def screen(title: str, body: str, keyword_name: str, budget: TokenBudget) -> bool:
     """返回是否放行。任何失败都放行 —— 宁可多花一点也不要漏内容。"""
+    if not config.AI_ENABLED:
+        return True                      # 无 AI 模式：不筛，全留
     if budget.exceeded:
         return True
 
@@ -136,10 +138,40 @@ def _build_prompt(keyword: dict, digest_date, items: list[dict]) -> str:
     return "\n".join(parts)
 
 
+def mechanical_digest(keyword: dict, items: list[dict]) -> DigestDraft:
+    """无 AI 模式的简报：机械地按文章标题列出，不做提炼也不做合并。
+
+    质量约等于 V1（标题列表），但数据结构是完整的 V2 —— 每条要点仍然绑定
+    item_id，前端的「点要点跳到出处」照常可用。全文也照常归档，
+    以后开了 AI 可以拿存档重新生成。
+    """
+    bullets = [
+        Bullet(text=item["title"][:200], item_ids=[item["id"]])
+        for item in items
+        if item.get("title")
+    ]
+    if not bullets:
+        return DigestDraft(status="no_update")
+
+    return DigestDraft(
+        status="ok",
+        title=f"{keyword['name']}：{len(bullets)} 篇新内容",
+        summary_md=(
+            f"今天为「{keyword['name']}」收录了 {len(bullets)} 篇新内容。"
+            "本条简报未经 AI 提炼，要点即文章标题原文。"
+        ),
+        bullets=bullets,
+    )
+
+
 def distill(keyword: dict, digest_date, items: list[dict], budget: TokenBudget) -> DigestDraft:
     """产出当日简报。解析失败重试一次，仍失败抛异常 → 本关键词 failed。"""
     if not items:
         return DigestDraft(status="no_update")
+
+    if not config.AI_ENABLED:
+        log.info("AI 已关闭，按标题机械生成简报")
+        return mechanical_digest(keyword, items)
 
     if budget.exceeded:
         log.warning("token 预算已超，跳过提炼")

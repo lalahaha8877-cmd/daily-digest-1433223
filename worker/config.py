@@ -35,6 +35,18 @@ USER_TZ = ZoneInfo(os.environ.get("USER_TZ", "Asia/Kuala_Lumpur"))
 MODEL_SCREEN = os.environ.get("MODEL_SCREEN", "claude-haiku-4-5-20251001")
 MODEL_DISTILL = os.environ.get("MODEL_DISTILL", "claude-sonnet-5")
 
+# 是否启用 AI（预筛 + 提炼）。关掉就完全不需要 ANTHROPIC_API_KEY。
+#
+# 关掉之后：发现、去重、抓全文、抓配图、存档、清理全都照常，只是简报不再由
+# 模型提炼，而是机械地按文章标题列出来 —— 内容质量约等于 V1，但数据结构是
+# 完整的 V2，前端照常能用。
+#
+# 重要：全文已经归档了，所以以后想开 AI，可以拿存档重新生成历史简报，
+# 不用重新抓一遍。先免费跑起来、以后再决定要不要付费，代价很低。
+AI_ENABLED = os.environ.get("AI_ENABLED", "true").strip().lower() not in (
+    "false", "0", "no", "off",
+)
+
 # ── 抓取 ─────────────────────────────────────────────────
 MIN_BODY_CHARS = 500              # 低于此视为抓取失败，升级下一档
 PER_DOMAIN_INTERVAL = 2.0         # 同域名两次请求最小间隔（秒），§12 合规要求

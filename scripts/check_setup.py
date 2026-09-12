@@ -206,10 +206,23 @@ def check_r2() -> bool:
 
 
 # ── Anthropic ────────────────────────────────────────────
+def ai_enabled() -> bool:
+    return os.environ.get("AI_ENABLED", "true").strip().lower() not in (
+        "false", "0", "no", "off",
+    )
+
+
 def check_anthropic() -> bool:
     print("\n【Anthropic API】")
+
+    if not ai_enabled():
+        print(f"{SKIP} AI 已关闭（AI_ENABLED=false），本项无需配置")
+        print(f"  {DIM}简报将按文章标题机械生成；以后想开 AI，全文已归档可重新生成{RESET}")
+        return True                      # 不算失败：这是有意的配置
+
     if missing("ANTHROPIC_API_KEY"):
-        print(f"{SKIP} 未配置：ANTHROPIC_API_KEY")
+        print(f"{FAIL} AI_ENABLED=true 但缺少 ANTHROPIC_API_KEY")
+        print(f"  {DIM}不想付费的话，在 .env 里设 AI_ENABLED=false{RESET}")
         return False
 
     try:
