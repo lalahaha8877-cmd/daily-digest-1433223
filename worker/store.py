@@ -125,34 +125,43 @@ _store: RoutingStore | None = None
 
 
 def get_store() -> RoutingStore:
-    """单例。首次调用时才建客户端 —— import 本模块不要求密钥齐全。"""
+    """单例。首次调用时才建客户端 —— import 本模块不要求密钥齐全。
+
+    配图后端由 config.IMAGES_BACKEND 决定；只有选 r2 时才要求 R2 那几个密钥。
+    """
     global _store
     if _store is not None:
         return _store
 
-    import boto3
     from supabase import create_client
 
     supabase = SupabaseStore(
         create_client(config.secrets.supabase_url, config.secrets.supabase_service_key)
     )
 
-    r2 = R2Store(
-        boto3.client(
-            "s3",
-            endpoint_url=f"https://{config.secrets.r2_account_id}.r2.cloudflarestorage.com",
-            aws_access_key_id=config.secrets.r2_access_key_id,
-            aws_secret_access_key=config.secrets.r2_secret_access_key,
-            region_name="auto",
-        ),
-        bucket_override=config.secrets.r2_bucket_images,
-    )
+    if config.IMAGES_BACKEND == "r2":
+        import boto3
+
+        images_backend: ObjectStore = R2Store(
+            boto3.client(
+                "s3",
+                endpoint_url=f"https://{config.secrets.r2_account_id}.r2.cloudflarestorage.com",
+                aws_access_key_id=config.secrets.r2_access_key_id,
+                aws_secret_access_key=config.secrets.r2_secret_access_key,
+                region_name="auto",
+            ),
+            bucket_override=config.secrets.r2_bucket_images,
+        )
+        log.info("配图后端：Cloudflare R2")
+    else:
+        images_backend = supabase
+        log.info("配图后端：Supabase Storage")
 
     _store = RoutingStore(
         {
             config.BUCKET_FULLTEXT: supabase,
             config.BUCKET_EXPORTS: supabase,
-            config.BUCKET_IMAGES: r2,
+            config.BUCKET_IMAGES: images_backend,
         }
     )
     return _store

@@ -62,9 +62,26 @@ SEARCH_TEXT_CHARS = 2000          # items.search_text 取全文前 N 字
 CANDIDATE_MULTIPLIER = 4          # 候选截断到 max_items_per_run * 此值
 
 # ── Bucket 名 ────────────────────────────────────────────
-BUCKET_FULLTEXT = "fulltext"      # Supabase Storage
-BUCKET_EXPORTS = "exports"        # Supabase Storage
-BUCKET_IMAGES = "images"          # Cloudflare R2
+BUCKET_FULLTEXT = "fulltext"
+BUCKET_EXPORTS = "exports"
+BUCKET_IMAGES = "images"
+
+# 配图存哪个后端："supabase" 或 "r2"。
+#
+# 默认 supabase —— 后端文档 §3 原本指定 R2，理由是「压缩后约 2.2GB/年，
+# 不到半年挤爆 Supabase 1GB 免费额度」。但那是**年累计**数字，而 §8.2 L2 又
+# 规定配图与全文同期清理（默认 retention_days=90）。按 90 天保留算稳态：
+#
+#     1 个关键词  →  约 53 MB       10 个关键词 → 约 527 MB
+#
+# 都在 1GB 以内。所以起步阶段不需要第二个存储账号（R2 还要绑支付卡）。
+#
+# 什么时候该切到 r2：关键词数上到两位数、把 retention_days 调很长、
+# 或者大量使用收藏（收藏豁免清理、会一直累积）。切换只需改这个环境变量，
+# 业务代码一行不动。切换后旧图仍在 Supabase，需要的话得自行搬迁。
+IMAGES_BACKEND = os.environ.get("IMAGES_BACKEND", "supabase").strip().lower()
+if IMAGES_BACKEND not in ("supabase", "r2"):
+    raise RuntimeError(f"IMAGES_BACKEND 只能是 supabase 或 r2，实际是 {IMAGES_BACKEND!r}")
 
 
 class Secrets:

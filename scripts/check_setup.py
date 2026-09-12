@@ -42,7 +42,18 @@ else:
 OK, FAIL, SKIP = f"{GREEN}[OK]{RESET}", f"{RED}[!!]{RESET}", f"{YELLOW}[--]{RESET}"
 
 REQUIRED_TABLES = {"keywords", "runs", "digests", "items", "exports"}
-REQUIRED_SUPABASE_BUCKETS = {"fulltext", "exports"}
+
+
+def images_backend() -> str:
+    return os.environ.get("IMAGES_BACKEND", "supabase").strip().lower()
+
+
+def required_supabase_buckets() -> set[str]:
+    """配图走 Supabase 时，images 桶也建在 Supabase。"""
+    buckets = {"fulltext", "exports"}
+    if images_backend() != "r2":
+        buckets.add("images")
+    return buckets
 
 
 def load_env() -> None:
@@ -106,7 +117,7 @@ def check_supabase() -> bool:
     # 2. bucket 是否建好
     try:
         buckets = {b.name if hasattr(b, "name") else b["name"] for b in client.storage.list_buckets()}
-        for want in sorted(REQUIRED_SUPABASE_BUCKETS):
+        for want in sorted(required_supabase_buckets()):
             if want in buckets:
                 print(f"{OK} bucket {want}")
             else:
@@ -122,9 +133,15 @@ def check_supabase() -> bool:
 # ── Cloudflare R2 ────────────────────────────────────────
 def check_r2() -> bool:
     print("\n【Cloudflare R2】")
+
+    if images_backend() != "r2":
+        print(f"{SKIP} 配图走 Supabase（IMAGES_BACKEND=supabase），本项无需配置")
+        print(f"  {DIM}关键词多到两位数、或大量使用收藏之后再考虑切到 R2{RESET}")
+        return True                      # 不算失败：这是正常的默认配置
+
     gap = missing("R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY")
     if gap:
-        print(f"{SKIP} 未配置：{', '.join(gap)}")
+        print(f"{FAIL} IMAGES_BACKEND=r2 但缺少：{', '.join(gap)}")
         return False
 
     bucket = os.environ.get("R2_BUCKET_IMAGES", "images")
