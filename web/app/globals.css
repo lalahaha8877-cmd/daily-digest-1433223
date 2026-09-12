@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+/* 设计 token 直接取自《每日消息V2-前端需求文档》§1.1。
+   约束：任何颜色都不得只在 media query 里定义；body 必须显式设 background。 */
+:root {
+  --bg: #FAFAF9;
+  --surface: #FFFFFF;
+  --surface-sunken: #F4F4F2;
+  --border: #E4E4E0;
+  --border-strong: #D0D0CA;
+  --text: #1C1C1A;
+  --text-muted: #6B6B66;
+  --text-subtle: #94948E;
+  --accent: #2F6F6B;
+  --accent-hover: #255A57;
+  --accent-subtle: #E8F1F0;
+  --ok: #3F8F5B;
+  --neutral: #94948E;
+  --warn: #C08A2E;
+  --danger: #C0453B;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+             "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161614;
+    --surface: #1E1E1C;
+    --surface-sunken: #121210;
+    --border: #302F2C;
+    --border-strong: #45443F;
+    --text: #EDEDE8;
+    --text-muted: #A3A29B;
+    --text-subtle: #77766F;
+    --accent: #62B3AC;
+    --accent-hover: #7CC5BF;
+    --accent-subtle: #1E2E2C;
+    --ok: #5FA97A;
+    --neutral: #77766F;
+    --warn: #D9A74E;
+    --danger: #D8695F;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #161614;
+  --surface: #1E1E1C;
+  --surface-sunken: #121210;
+  --border: #302F2C;
+  --border-strong: #45443F;
+  --text: #EDEDE8;
+  --text-muted: #A3A29B;
+  --text-subtle: #77766F;
+  --accent: #62B3AC;
+  --accent-hover: #7CC5BF;
+  --accent-subtle: #1E2E2C;
+  --ok: #5FA97A;
+  --neutral: #77766F;
+  --warn: #D9A74E;
+  --danger: #D8695F;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 中文正文：防长 URL 撑破布局 */
+p, li, td { word-break: normal; overflow-wrap: anywhere; }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-hover); }
+
+/* 焦点环：不得 outline:none（无障碍要求 §8） */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ── 阅读排版：仅用于全文归档与完整稿（§1.2 的 reading 层级）── */
+.reading {
+  font-size: 17px;
+  line-height: 1.8;
+  max-width: 68ch;
+}
+.reading h1, .reading h2, .reading h3 {
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 1.6em 0 .6em;
+  text-wrap: balance;
+}
+.reading h1 { font-size: 1.45em; }
+.reading h2 { font-size: 1.25em; }
+.reading h3 { font-size: 1.1em; }
+.reading p { margin: 0 0 1.1em; }
+.reading ul, .reading ol { margin: 0 0 1.1em; padding-left: 1.4em; }
+.reading li { margin-bottom: .4em; }
+.reading blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 1em;
+  margin: 0 0 1.1em;
+  color: var(--text-muted);
+}
+.reading img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin: .5em 0;
+}
+.reading pre {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;          /* 页面 body 永不横向滚动 */
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.reading code {
+  font-family: var(--font-mono);
+  font-size: .87em;
+  background: var(--surface-sunken);
+  padding: 1.5px 5px;
+  border-radius: 4px;
+}
+.reading pre code { background: none; padding: 0; }
+.reading table { width: 100%; border-collapse: collapse; font-size: .92em; }
+.reading th, .reading td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; }
+.reading th { background: var(--surface-sunken); }
+.table-scroll { overflow-x: auto; }
