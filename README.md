@@ -107,13 +107,16 @@ sleep，解码本身要多次往返 Google。一个 feed 约 100 条，全解要
 |---|---|
 | 数据库结构 | ✅ 写完，待在 Supabase 执行 |
 | 前后端契约类型 | ✅ 写完 |
-| Worker · 发现层 rss / gnews | ✅ 写完并实测通过 |
+| 配置自检脚本 | ✅ `py scripts/check_setup.py` |
+| Worker · 发现层（rss / gnews / listing / websearch） | ✅ 写完，rss + gnews 实测通过 |
 | Worker · 去重 | ✅ 写完并实测通过 |
-| Worker · 发现层 listing / websearch | ⬜ |
-| Worker · 抓取层（三级火箭） | ⬜ |
-| Worker · 配图下载压缩 | ⬜ |
-| Worker · AI 提炼 | ⬜ |
-| Worker · 写库 / 清理 | ⬜ |
-| 存储适配层（Supabase + R2 路由） | ⬜ |
-| 应用 API (A) 18 个接口 | ⬜ |
-| 前端 9 个路由 | ⬜ |
+| Worker · 存储适配层（Supabase + R2 路由） | ✅ 写完 |
+| Worker · 抓取层（三级火箭 + 限速 + robots） | ✅ 写完 |
+| Worker · 配图下载压缩 | ✅ 写完 |
+| Worker · AI 提炼（预筛 + 提炼） | ✅ 写完 |
+| Worker · 写库 / 清理 / CLI | ✅ 写完 |
+| **应用 API (A) 18 个接口** | ⬜ 唯一未动工的部分 |
+| **前端 9 个路由** | ⬜ 唯一未动工的部分 |
+
+采集端已经完整，配好外部服务就能跑出真实简报（见下方本地运行命令）。
+剩下的是阅读端 —— 没有它，数据进了库但没有界面看。
