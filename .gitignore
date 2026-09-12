@@ -28,3 +28,6 @@ Thumbs.db
 web/.next/
 web/node_modules/
 web/.env.local
+
+.vercel
+.env*
