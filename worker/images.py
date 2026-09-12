@@ -159,7 +159,20 @@ def process(
                         bytes=len(data),
                     )
                 )
-                markdown = _replace_src(markdown, img["src"], src, index)
+                markdown, replaced = _replace_src(markdown, img["src"], src, index)
+                if not replaced:
+                    # 图已经上传成功，但 markdown 里找不到对应的 ![](...) 可替换。
+                    # 若就此放过，图会成为存储桶里永远显示不出来的孤儿（曾发生）。
+                    # 位置不理想好过彻底丢失：补在正文末尾，并留下告警。
+                    log.warning(
+                        "配图 %d 在 markdown 中无匹配链接，改为追加到正文末尾：%s",
+                        index, src[:90],
+                    )
+                    alt = img["alt"] or f"配图 {index + 1}"
+                    markdown = (
+                        markdown.rstrip()
+                        + f"\n\n![{alt}](item-image://{index})\n"
+                    )
             except Exception as e:
                 # 单张失败不阻塞其他图，也不阻塞全文
                 failed += 1
@@ -169,12 +182,18 @@ def process(
     return results, markdown, failed
 
 
-def _replace_src(markdown: str, original_src: str, resolved_src: str, index: int) -> str:
-    """把 Markdown 里指向这张图的链接换成占位符。
+def _replace_src(
+    markdown: str, original_src: str, resolved_src: str, index: int
+) -> tuple[str, bool]:
+    """把 Markdown 里指向这张图的链接换成占位符。返回 (markdown, 是否替换成功)。
 
     原始 src 和补全后的绝对 URL 都要试 —— 取决于 markdown 是由哪条路径产出的。
+
+    必须把「有没有替换到」告诉调用方：替换不到时静默返回原文，会让上传成功的图
+    永远显示不出来，而 images_ok 计数照样 +1，日志全绿，极难发现。
     """
     placeholder = f"item-image://{index}"
+    replaced = False
     for src in (original_src, resolved_src):
         if not src:
             continue
@@ -182,8 +201,9 @@ def _replace_src(markdown: str, original_src: str, resolved_src: str, index: int
         pattern = re.compile(
             r"(!\[[^\]]*\]\()\s*" + re.escape(src) + r"(\s+[^)]*)?\)"
         )
-        markdown = pattern.sub(lambda m: m.group(1) + placeholder + ")", markdown)
-    return markdown
+        markdown, n = pattern.subn(lambda m: m.group(1) + placeholder + ")", markdown)
+        replaced = replaced or n > 0
+    return markdown, replaced
 
 
 def resolve_placeholders(markdown: str, images: list[dict], ttl: int = 3600) -> str:

@@ -4,8 +4,13 @@
 images.py 只在「已提取的正文 HTML」里找 <img>，天然避开导航头像和广告位。
 
 策略：trafilatura 优先（正文识别质量好），拿不到再退 readability-lxml。
-不使用 trafilatura 的 include_images —— 该开关在社区反馈里不总可靠（主文档 §16
-引用的 issue），改为自己从正文 HTML 解析 <img>，更可控。
+配图的【下载】不依赖 trafilatura 的 include_images —— 该开关在社区反馈里不总可靠
+（主文档 §16 引用的 issue），改为自己从正文 HTML 解析 <img>，更可控。
+
+但 markdown 与 html 两条提取路径都必须开 include_images，否则会出现一种静默失败：
+html 里有 <img>（图照常下载、上传、写库、计入 images_ok），markdown 里却没有
+![](...) 链接，于是 images.py 的占位符替换无目标可替、什么都不做也不报错——
+图片进了存储桶却永远不会显示。2026-09-12 首次云端运行即踩到此坑。
 """
 
 from __future__ import annotations
@@ -44,6 +49,7 @@ def _try_trafilatura_markdown(html: str, base_url: str) -> str:
             output_format="markdown",
             include_comments=False,
             include_tables=True,
+            include_images=True,     # 必须与 _try_trafilatura_html 保持一致，见模块 docstring
             favor_precision=True,
         )
         return out or ""
