@@ -312,3 +312,21 @@ export async function listRuns(days = 30): Promise<RunRecord[]> {
     }) as RunRecord
   })
 }
+
+/** 单条运行记录。「立即采集」的轮询用（接口 17）。 */
+export async function getRun(id: string): Promise<RunRecord | null> {
+  const { data: run } = await db().from('runs').select('*').eq('id', id).maybeSingle()
+  if (!run) return null
+
+  const { data: k } = await db()
+    .from('keywords')
+    .select('slug,name')
+    .eq('id', run.keyword_id)
+    .maybeSingle()
+
+  return applyStaleRule({
+    ...run,
+    keyword_slug: k?.slug ?? '',
+    keyword_name: k?.name ?? '(已删除)',
+  }) as RunRecord
+}

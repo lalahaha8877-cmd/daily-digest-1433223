@@ -1,12 +1,15 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getKeyword, listDigests } from '@/lib/queries'
+import CollectButton from '@/components/CollectButton'
+import { getKeywordDetail, listDigests } from '@/lib/queries'
 import {
   BackLink,
   Card,
   EmptyState,
+  StatusDot,
   cleanDomain,
   formatDigestDate,
+  relativeTime,
 } from '@/components/ui'
 
 export const dynamic = 'force-dynamic'
@@ -17,10 +20,11 @@ export default async function TimelinePage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const keyword = await getKeyword(slug)
+  const keyword = await getKeywordDetail(slug)
   if (!keyword) notFound()
 
   const digests = await listDigests(slug, { limit: 30 })
+  const lastRun = keyword.last_run
 
   return (
     <main>
@@ -38,17 +42,50 @@ export default async function TimelinePage({
             设置
           </Link>
         </div>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-          检索词 {keyword.query} · 保留 {keyword.retention_days} 天 · 每次最多{' '}
-          {keyword.max_items_per_run} 条
-          {!keyword.enabled && <span style={{ color: 'var(--text-subtle)' }}> · 已停用</span>}
+        <p
+          style={{
+            fontSize: 13,
+            color: 'var(--text-muted)',
+            margin: '0 0 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+          }}
+        >
+          {lastRun && <StatusDot status={lastRun.status} />}
+          {lastRun?.finished_at && <span>{relativeTime(lastRun.finished_at)}</span>}
+          <span>检索词 {keyword.query}</span>
+          <span>· 保留 {keyword.retention_days} 天</span>
+          <span>· 每次最多 {keyword.max_items_per_run} 条</span>
+          {!keyword.enabled && <span style={{ color: 'var(--text-subtle)' }}>· 已停用</span>}
         </p>
+
+        <CollectButton slug={slug} disabled={!keyword.enabled} />
       </header>
+
+      {/* 失败态要单独显示原因 —— 「昨天为什么没有内容」是 V1 踩过的坑（§2.1 第 8 条） */}
+      {lastRun?.status === 'failed' && (
+        <div
+          role="alert"
+          style={{
+            border: '1px solid var(--danger)',
+            borderRadius: 10,
+            padding: '10px 14px',
+            marginBottom: 16,
+            fontSize: 14,
+          }}
+        >
+          最近一次采集失败了
+          {lastRun.run_date ? `（${lastRun.run_date}）` : ''}。{' '}
+          <Link href="/status">查看运行状态</Link>
+        </div>
+      )}
 
       {digests.length === 0 ? (
         <EmptyState
           title="还没有采集过"
-          hint="在项目根目录跑 py -m worker.main run --keyword 这个slug --force，或者等明天早上 8 点。"
+          hint="点上面的「立即采集」马上试一次，或者等明天早上 8 点自动跑。"
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
