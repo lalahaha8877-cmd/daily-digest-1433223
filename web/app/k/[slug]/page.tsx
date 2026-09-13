@@ -29,10 +29,19 @@ export default async function TimelinePage({
       </div>
 
       <header style={{ padding: '4px 0 20px' }}>
-        <h1 style={{ fontSize: 26, fontWeight: 600, margin: '0 0 6px' }}>{keyword.name}</h1>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 600, margin: '0 0 6px' }}>{keyword.name}</h1>
+          <Link
+            href={`/k/${slug}/settings`}
+            style={{ marginLeft: 'auto', fontSize: 14, whiteSpace: 'nowrap' }}
+          >
+            设置
+          </Link>
+        </div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
           检索词 {keyword.query} · 保留 {keyword.retention_days} 天 · 每次最多{' '}
           {keyword.max_items_per_run} 条
+          {!keyword.enabled && <span style={{ color: 'var(--text-subtle)' }}> · 已停用</span>}
         </p>
       </header>
 

@@ -3,6 +3,7 @@ import type {
   DigestDetail,
   DigestSummary,
   ItemSummary,
+  KeywordDetail,
   KeywordSummary,
   RunRecord,
 } from './types'
@@ -93,6 +94,35 @@ export async function listKeywords(includeDisabled = false): Promise<KeywordSumm
 export async function getKeyword(slug: string) {
   const { data } = await db().from('keywords').select('*').eq('slug', slug).maybeSingle()
   return data
+}
+
+/**
+ * KeywordDetail = KeywordSummary + sources/query/保留配置（契约 §7）。
+ *
+ * 复用 listKeywords 拿统计部分：单用户场景关键词是个位数，多查一次的代价
+ * 远低于把那段未读数/最近运行的聚合逻辑复制一份再各自演化。
+ */
+export async function getKeywordDetail(slug: string): Promise<KeywordDetail | null> {
+  const row = await getKeyword(slug)
+  if (!row) return null
+
+  const summary = (await listKeywords(true)).find((k) => k.slug === slug)
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    enabled: row.enabled,
+    unread_count: summary?.unread_count ?? 0,
+    total_digests: summary?.total_digests ?? 0,
+    last_digest_date: summary?.last_digest_date ?? null,
+    last_run: summary?.last_run ?? null,
+    query: row.query,
+    sources: row.sources ?? [],
+    retention_days: row.retention_days,
+    max_items_per_run: row.max_items_per_run,
+    created_at: row.created_at,
+  }
 }
 
 // ── 日报 ─────────────────────────────────────────────────

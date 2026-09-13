@@ -18,15 +18,35 @@ export default async function HomePage() {
         }}
       >
         <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0 }}>关键词</h1>
-        <Link href="/status" style={{ fontSize: 14 }}>
-          运行状态
-        </Link>
+        <span style={{ display: 'flex', gap: 16, fontSize: 14 }}>
+          <Link href="/status">运行状态</Link>
+          <Link href="/new" style={{ fontWeight: 500 }}>
+            ＋ 新建
+          </Link>
+        </span>
       </header>
 
       {keywords.length === 0 ? (
         <EmptyState
           title="还没有关键词"
-          hint="在 Supabase 的 keywords 表里加一条，明天早上就能收到第一份简报。"
+          hint="添加一个关键词，明天早上就能收到第一份简报。"
+          action={
+            <Link
+              href="/new"
+              style={{
+                display: 'inline-block',
+                background: 'var(--accent)',
+                color: '#fff',
+                borderRadius: 6,
+                padding: '7px 14px',
+                fontSize: 14,
+                fontWeight: 500,
+                textDecoration: 'none',
+              }}
+            >
+              新建关键词
+            </Link>
+          }
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

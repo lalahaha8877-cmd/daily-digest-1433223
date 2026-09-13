@@ -140,3 +140,8 @@ a:hover { color: var(--accent-hover); }
 .reading th, .reading td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; }
 .reading th { background: var(--surface-sunken); }
 .table-scroll { overflow-x: auto; }
+
+/* 按钮 loading 态的转圈。prefers-reduced-motion 下由上面的全局规则关掉。 */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
