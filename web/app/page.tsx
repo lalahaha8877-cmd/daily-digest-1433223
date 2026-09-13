@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import ExpiringBanner from '@/components/ExpiringBanner'
 import { listKeywords } from '@/lib/queries'
 import { Badge, Card, EmptyState, StatusDot, cleanDomain } from '@/components/ui'
 
@@ -25,6 +26,8 @@ export default async function HomePage() {
           </Link>
         </span>
       </header>
+
+      <ExpiringBanner />
 
       {keywords.length === 0 ? (
         <EmptyState

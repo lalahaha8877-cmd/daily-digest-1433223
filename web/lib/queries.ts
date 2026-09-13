@@ -2,6 +2,7 @@ import { db, readFulltext, resolveImagePlaceholders } from './supabase'
 import type {
   DigestDetail,
   DigestSummary,
+  ExpiringGroup,
   ItemSummary,
   KeywordDetail,
   KeywordSummary,
@@ -329,4 +330,94 @@ export async function getRun(id: string): Promise<RunRecord | null> {
     keyword_slug: k?.slug ?? '',
     keyword_name: k?.name ?? '(已删除)',
   }) as RunRecord
+}
+
+// ── 到期提醒 ─────────────────────────────────────────────
+/**
+ * 即将被保留策略清理的条目，按关键词分组。
+ *
+ * 【判定规则必须与 worker/db.py 的 expired_items() 完全一致】，否则这里提醒的
+ * 和 cleanup 实际删的不是同一批，提醒就是错的。那边的四个条件：
+ *   1. fulltext_status = 'ok'（pending/failed/skipped/purged 都没有对象可删）
+ *   2. items.is_starred = false
+ *   3. 所属 digest 也未收藏（§8.2：收藏豁免一切清理，简报级同样生效）
+ *   4. (now - discovered_at).days >= keyword.retention_days
+ *
+ * 第 4 条那边用的是 Python timedelta.days（向下取整），这里用 Math.floor
+ * 对齐；now 都取用户时区（§4.4）。
+ *
+ * 和那边一样在应用层过滤而不是写 SQL —— PostgREST 表达不了「join keywords
+ * 拿 retention_days 再比日期」，且这个量级的数据拉回来算完全够用。
+ */
+export async function listExpiringItems(withinDays: number): Promise<ExpiringGroup[]> {
+  const { data: rows } = await db()
+    .from('items')
+    .select('id,title,url,source_domain,discovered_at,image_count,digest_id,keyword_id')
+    .eq('fulltext_status', 'ok')
+    .eq('is_starred', false)
+    .order('discovered_at')
+
+  if (!rows?.length) return []
+
+  const { data: keywords } = await db()
+    .from('keywords')
+    .select('id,slug,name,retention_days')
+  const kw = new Map((keywords ?? []).map((k) => [k.id as string, k]))
+
+  // 所属简报被收藏的条目要排除（条件 3）
+  const digestIds = [...new Set(rows.map((r) => r.digest_id).filter(Boolean))] as string[]
+  let starredDigests = new Set<string>()
+  if (digestIds.length) {
+    const { data: starred } = await db()
+      .from('digests')
+      .select('id')
+      .in('id', digestIds)
+      .eq('is_starred', true)
+    starredDigests = new Set((starred ?? []).map((d) => d.id as string))
+  }
+
+  const { data: digestDates } = digestIds.length
+    ? await db().from('digests').select('id,digest_date').in('id', digestIds)
+    : { data: [] }
+  const digestDate = new Map(
+    (digestDates ?? []).map((d) => [d.id as string, d.digest_date as string]),
+  )
+
+  const now = Date.now()
+  const groups = new Map<string, ExpiringGroup>()
+
+  for (const r of rows) {
+    const k = kw.get(r.keyword_id)
+    if (!k) continue
+    if (r.digest_id && starredDigests.has(r.digest_id)) continue
+
+    const ageDays = Math.floor((now - new Date(r.discovered_at).getTime()) / 86400_000)
+    const daysLeft = k.retention_days - ageDays
+    if (daysLeft > withinDays) continue
+
+    let g = groups.get(k.slug)
+    if (!g) {
+      g = { keyword: { slug: k.slug, name: k.name }, items: [] }
+      groups.set(k.slug, g)
+    }
+    g.items.push({
+      id: r.id,
+      title: r.title,
+      url: r.url,
+      source_domain: r.source_domain,
+      discovered_at: r.discovered_at,
+      days_left: daysLeft,
+      image_count: r.image_count ?? 0,
+      keyword: { slug: k.slug, name: k.name, retention_days: k.retention_days },
+      digest: r.digest_id
+        ? { id: r.digest_id, digest_date: digestDate.get(r.digest_id) ?? '' }
+        : null,
+    })
+  }
+
+  // 最紧急的排前面
+  for (const g of groups.values()) g.items.sort((a, b) => a.days_left - b.days_left)
+  return [...groups.values()].sort(
+    (a, b) => (a.items[0]?.days_left ?? 0) - (b.items[0]?.days_left ?? 0),
+  )
 }

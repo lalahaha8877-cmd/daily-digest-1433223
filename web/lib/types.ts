@@ -13,6 +13,13 @@
 // 2. 【未补】runs 表有 images_ok / images_failed 两列（§2.3），§7 未列出。
 //    状态页目前不显示配图成败数。要显示的话，应先在文档层面把这两个字段
 //    加进契约，而不是任何一边单方面加。
+//
+// 3. 【新增】ExpiringItem / ExpiringGroup —— 文档里没有这两个类型，也没有
+//    对应接口。它们服务于一个文档未覆盖的需求：在存档被保留策略删掉之前
+//    提醒用户。文档 §8.2 只规定了「过期即删」，前端文档 §5.5 则是事后告知
+//    （「已按保留策略清理」），并在已清理的条目上放一个「收藏这条以后不再
+//    清理」按钮 —— 但那时东西已经删了，收藏救不回来。真正能救的时机在删除
+//    之前，文档没有覆盖。这两个类型和 /api/expiring 是为补这个缺口加的。
 
 export type RunStatus = 'queued' | 'running' | 'ok' | 'no_update' | 'failed'
 export type FulltextStatus = 'pending' | 'ok' | 'failed' | 'skipped' | 'purged'
@@ -143,4 +150,28 @@ export interface ApiError {
 export interface Paginated<T> {
   data: T[]
   next_cursor: string | null
+}
+
+// ── 到期提醒（文档外新增，见文件头第 3 条）──────────────
+//
+// 判定规则必须与 worker/db.py 的 expired_items() 逐条对齐，否则提醒的
+// 和实际删的不是同一批。四个条件：fulltext_status='ok'、条目未收藏、
+// 所属简报未收藏、按用户时区算的天数差 >= retention_days。
+
+export interface ExpiringItem {
+  id: string
+  title: string
+  url: string
+  source_domain: string
+  discovered_at: string
+  /** 距离被清理还剩几天。<= 0 表示已达保留期，下一次清理就会删。 */
+  days_left: number
+  image_count: number
+  keyword: { slug: string; name: string; retention_days: number }
+  digest: { id: string; digest_date: string } | null
+}
+
+export interface ExpiringGroup {
+  keyword: { slug: string; name: string }
+  items: ExpiringItem[]
 }
