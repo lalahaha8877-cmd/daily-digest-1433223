@@ -1,18 +1,27 @@
 import type { Metadata } from 'next'
+import { LanguageProvider, LanguageToggle } from '@/components/LanguageProvider'
+import { getLocale } from '@/lib/i18n-server'
 import './globals.css'
 
-export const metadata: Metadata = {
-  title: '每日消息',
-  description: '关键词订阅式资讯采集',
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale()
+  return {
+    title: locale === 'en' ? 'Daily News' : '每日消息',
+    description: locale === 'en' ? 'Keyword-based news subscriptions' : '关键词订阅式资讯采集',
+  }
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale()
   return (
-    <html lang="zh-CN">
+    <html lang={locale}>
       <body>
-        <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 16px 64px' }}>
-          {children}
-        </div>
+        <LanguageProvider locale={locale}>
+          <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 16px 64px' }}>
+            <LanguageToggle />
+            {children}
+          </div>
+        </LanguageProvider>
       </body>
     </html>
   )

@@ -1,10 +1,15 @@
 'use client'
 
+import { useTranslation } from '@/components/LanguageProvider'
+
+
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 
 function LoginForm() {
+  const t = useTranslation()
+
   const router = useRouter()
   const params = useSearchParams()
   const [password, setPassword] = useState('')
@@ -33,11 +38,11 @@ function LoginForm() {
       const body = await res.json().catch(() => null)
       setError(
         res.status === 429
-          ? '尝试太频繁，请 15 分钟后再试'
-          : body?.error?.message || '口令不对',
+          ? "尝试太频繁，请 15 分钟后再试"
+          : body?.error?.message || "口令不对",
       )
     } catch {
-      setError('网络错误，请重试')
+      setError("网络错误，请重试")
     } finally {
       setBusy(false)
     }
@@ -45,7 +50,7 @@ function LoginForm() {
 
   return (
     <main style={{ maxWidth: 360, margin: '18vh auto 0' }}>
-      <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 20px' }}>每日消息</h1>
+      <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 20px' }}>{t("每日消息")}</h1>
       <form onSubmit={submit}>
         <input
           type="password"
@@ -53,8 +58,8 @@ function LoginForm() {
           autoFocus
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="访问口令"
-          aria-label="访问口令"
+          placeholder={t("访问口令")}
+          aria-label={t("访问口令")}
           aria-describedby={error ? 'login-error' : undefined}
           style={{
             width: '100%',
@@ -68,7 +73,7 @@ function LoginForm() {
         />
         {error && (
           <p id="login-error" style={{ color: 'var(--danger)', fontSize: 13, margin: '8px 0 0' }}>
-            {error}
+            {t(error)}
           </p>
         )}
         <button
@@ -88,7 +93,7 @@ function LoginForm() {
             opacity: busy || !password ? 0.6 : 1,
           }}
         >
-          {busy ? '登录中…' : '登录'}
+          {busy ? t("登录中…") : t("登录")}
         </button>
       </form>
     </main>

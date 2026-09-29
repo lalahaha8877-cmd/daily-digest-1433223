@@ -1,3 +1,4 @@
+import { getTranslation } from '@/lib/i18n-server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import CollectButton from '@/components/CollectButton'
@@ -19,6 +20,8 @@ export default async function TimelinePage({
 }: {
   params: Promise<{ slug: string }>
 }) {
+  const t = await getTranslation()
+
   const { slug } = await params
   const keyword = await getKeywordDetail(slug)
   if (!keyword) notFound()
@@ -29,7 +32,7 @@ export default async function TimelinePage({
   return (
     <main>
       <div style={{ padding: '20px 0 4px' }}>
-        <BackLink href="/">关键词</BackLink>
+        <BackLink href="/">{t("关键词")}</BackLink>
       </div>
 
       <header style={{ padding: '4px 0 20px' }}>
@@ -39,7 +42,7 @@ export default async function TimelinePage({
             href={`/k/${slug}/settings`}
             style={{ marginLeft: 'auto', fontSize: 14, whiteSpace: 'nowrap' }}
           >
-            设置
+            {t("设置")}
           </Link>
         </div>
         <p
@@ -54,11 +57,11 @@ export default async function TimelinePage({
           }}
         >
           {lastRun && <StatusDot status={lastRun.status} />}
-          {lastRun?.finished_at && <span>{relativeTime(lastRun.finished_at)}</span>}
-          <span>检索词 {keyword.query}</span>
-          <span>· 保留 {keyword.retention_days} 天</span>
-          <span>· 每次最多 {keyword.max_items_per_run} 条</span>
-          {!keyword.enabled && <span style={{ color: 'var(--text-subtle)' }}>· 已停用</span>}
+          {lastRun?.finished_at && <span>{relativeTime(lastRun.finished_at, t)}</span>}
+          <span>{t("检索词")}{keyword.query}</span>
+          <span>{t("· 保留")}{keyword.retention_days} {t("天")}</span>
+          <span>{t("· 每次最多")}{keyword.max_items_per_run} {t("条")}</span>
+          {!keyword.enabled && <span style={{ color: 'var(--text-subtle)' }}>{t("· 已停用")}</span>}
         </p>
 
         <CollectButton slug={slug} disabled={!keyword.enabled} />
@@ -76,16 +79,15 @@ export default async function TimelinePage({
             fontSize: 14,
           }}
         >
-          最近一次采集失败了
-          {lastRun.run_date ? `（${lastRun.run_date}）` : ''}。{' '}
-          <Link href="/status">查看运行状态</Link>
+          {t("最近一次采集失败了")}{lastRun.run_date ? `（${lastRun.run_date}）` : ''}。{' '}
+          <Link href="/status">{t("查看运行状态")}</Link>
         </div>
       )}
 
       {digests.length === 0 ? (
         <EmptyState
-          title="还没有采集过"
-          hint="点上面的「立即采集」马上试一次，或者等明天早上 8 点自动跑。"
+          title={t("还没有采集过")}
+          hint={t("点上面的「立即采集」马上试一次，或者等明天早上 8 点自动跑。")}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -106,11 +108,11 @@ export default async function TimelinePage({
                     marginBottom: 6,
                   }}
                 >
-                  <span>{formatDigestDate(d.digest_date)}</span>
-                  {d.is_starred && <span aria-label="已收藏">★</span>}
+                  <span>{formatDigestDate(d.digest_date, t)}</span>
+                  {d.is_starred && <span aria-label={t("已收藏")}>★</span>}
                   {!d.is_read && (
                     <span
-                      aria-label="未读"
+                      aria-label={t("未读")}
                       style={{
                         marginLeft: 'auto',
                         width: 8,
@@ -154,8 +156,7 @@ export default async function TimelinePage({
                   {d.source_domains.slice(0, 3).map(cleanDomain).join('  ')}
                   {d.source_domains.length > 3 && ` +${d.source_domains.length - 3}`}
                   {' · '}
-                  {d.item_count} 篇
-                </div>
+                  {d.item_count} {t("篇")}</div>
               </Card>
             </Link>
           ))}

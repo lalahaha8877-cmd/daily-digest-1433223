@@ -1,5 +1,8 @@
 'use client'
 
+import { useTranslation } from '@/components/LanguageProvider'
+
+
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -19,9 +22,11 @@ const POLL_MS = 3000
 const MAX_POLLS = 100 // 3s × 100 = 5 分钟
 
 type Phase = 'idle' | 'queued' | 'running'
-type Note = { kind: 'ok' | 'info' | 'danger'; text: string; showStatusLink?: boolean } | null
+type Note = { kind: 'ok' | 'info' | 'danger'; text: string; values?: Array<string | number>; showStatusLink?: boolean } | null
 
 export default function CollectButton({ slug, disabled }: { slug: string; disabled?: boolean }) {
+  const t = useTranslation()
+
   const router = useRouter()
   const [phase, setPhase] = useState<Phase>('idle')
   const [note, setNote] = useState<Note>(null)
@@ -39,17 +44,17 @@ export default function CollectButton({ slug, disabled }: { slug: string; disabl
     setPhase('idle')
   }, [])
 
-  const poll = useCallback(async () => {
+  const poll = useCallback(async function pollRun() {
     if (!alive.current || !runId.current) return
 
     // 页面在后台时不发请求，等回到前台由 visibilitychange 立刻补一次
     if (document.hidden) {
-      timer.current = setTimeout(poll, POLL_MS)
+      timer.current = setTimeout(pollRun, POLL_MS)
       return
     }
 
     if (polls.current >= MAX_POLLS) {
-      setNote({ kind: 'info', text: '还在跑，稍后到运行状态页查看结果', showStatusLink: true })
+      setNote({ kind: 'info', text: "还在跑，稍后到运行状态页查看结果", showStatusLink: true })
       stop()
       return
     }
@@ -60,7 +65,7 @@ export default function CollectButton({ slug, disabled }: { slug: string; disabl
       run = await apiGet<RunRecord>(`/api/runs/${runId.current}`)
     } catch {
       // 单次轮询失败（网络抖动）不该中断整个流程，下一轮继续
-      timer.current = setTimeout(poll, POLL_MS)
+      timer.current = setTimeout(pollRun, POLL_MS)
       return
     }
     if (!alive.current) return
@@ -68,26 +73,26 @@ export default function CollectButton({ slug, disabled }: { slug: string; disabl
     switch (run.status) {
       case 'queued':
         setPhase('queued')
-        timer.current = setTimeout(poll, POLL_MS)
+        timer.current = setTimeout(pollRun, POLL_MS)
         return
       case 'running':
         setPhase('running')
-        timer.current = setTimeout(poll, POLL_MS)
+        timer.current = setTimeout(pollRun, POLL_MS)
         return
       case 'ok':
-        setNote({ kind: 'ok', text: `已更新，新增 ${run.items_new} 条` })
+        setNote({ kind: 'ok', text: "已更新，新增 {0} 条", values: [run.items_new] })
         stop()
         router.refresh()
         return
       case 'no_update':
-        setNote({ kind: 'info', text: '今天没有新内容' })
+        setNote({ kind: 'info', text: "今天没有新内容" })
         stop()
         router.refresh()
         return
       case 'failed':
         setNote({
           kind: 'danger',
-          text: `采集失败：${run.error_message || run.error_code || '未知原因'}`,
+          text: "采集失败：{0}", values: [run.error_message || run.error_code || "未知原因"],
           showStatusLink: true,
         })
         stop()
@@ -123,14 +128,14 @@ export default function CollectButton({ slug, disabled }: { slug: string; disabl
       runId.current = run_id
       timer.current = setTimeout(poll, POLL_MS)
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : '触发失败，请稍后重试'
+      const msg = err instanceof ApiError ? err.message : "触发失败，请稍后重试"
       setNote({ kind: err instanceof ApiError && err.code === 'CONFLICT' ? 'info' : 'danger', text: msg })
       setPhase('idle')
     }
   }
 
   const label =
-    phase === 'queued' ? '已排队' : phase === 'running' ? '采集中…' : '立即采集'
+    phase === 'queued' ? t("已排队") : phase === 'running' ? t("采集中…") : t("立即采集")
 
   const COLOR = { ok: 'var(--ok)', info: 'var(--text-muted)', danger: 'var(--danger)' } as const
 
@@ -142,7 +147,7 @@ export default function CollectButton({ slug, disabled }: { slug: string; disabl
         loading={phase !== 'idle'}
         disabled={disabled}
         onClick={start}
-        title={disabled ? '关键词已停用，请先在设置里启用' : undefined}
+        title={disabled ? t("关键词已停用，请先在设置里启用") : undefined}
       >
         {label}
       </Button>
@@ -152,11 +157,11 @@ export default function CollectButton({ slug, disabled }: { slug: string; disabl
           role={note.kind === 'danger' ? 'alert' : 'status'}
           style={{ fontSize: 13, color: COLOR[note.kind] }}
         >
-          {note.text}
+          {t(note.text, ...(note.values ?? []).map((value) => typeof value === 'string' ? t(value) : value))}
           {note.showStatusLink && (
             <>
               {' '}
-              <Link href="/status">查看运行状态</Link>
+              <Link href="/status">{t("查看运行状态")}</Link>
             </>
           )}
         </span>

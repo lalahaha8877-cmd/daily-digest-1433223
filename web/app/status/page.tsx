@@ -1,3 +1,4 @@
+import { getTranslation } from '@/lib/i18n-server'
 import { listRuns } from '@/lib/queries'
 import { BackLink, EmptyState, StatusDot, relativeTime } from '@/components/ui'
 
@@ -12,23 +13,25 @@ function duration(started: string | null, finished: string | null): string {
 }
 
 export default async function StatusPage() {
+  const t = await getTranslation()
+
   const runs = await listRuns(30)
 
   return (
     <main>
       <div style={{ padding: '20px 0 4px' }}>
-        <BackLink href="/">关键词</BackLink>
+        <BackLink href="/">{t("关键词")}</BackLink>
       </div>
 
       <header style={{ padding: '4px 0 20px' }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>运行状态</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 600, margin: '0 0 4px' }}>{t("运行状态")}</h1>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-          最近 30 天。用来回答「昨天为什么没有内容」。
+          {t("最近 30 天。用来回答「昨天为什么没有内容」。")}
         </p>
       </header>
 
       {runs.length === 0 ? (
-        <EmptyState title="还没有运行记录" hint="采集跑过一次之后这里就有数据了。" />
+        <EmptyState title={t("还没有运行记录")} hint={t("采集跑过一次之后这里就有数据了。")} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {runs.map((r) => (
@@ -54,14 +57,14 @@ export default async function StatusPage() {
                 <StatusDot status={r.status} />
                 <span style={{ fontWeight: 500 }}>{r.keyword_name}</span>
                 <span style={{ fontSize: 13, color: 'var(--text-subtle)' }}>
-                  {r.trigger === 'manual' ? '手动' : '定时'} ·{' '}
-                  {relativeTime(r.created_at ?? r.started_at)}
+                  {r.trigger === 'manual' ? t("手动") : t("定时")} ·{' '}
+                  {relativeTime(r.created_at ?? r.started_at, t)}
                 </span>
               </div>
 
               <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                新增 {r.items_new} · 存档 {r.fulltext_ok}/
-                {r.fulltext_ok + r.fulltext_failed} · 用时{' '}
+                {t("新增")}{r.items_new} {t("· 存档")}{r.fulltext_ok}/
+                {r.fulltext_ok + r.fulltext_failed} {t("· 用时")}{' '}
                 {duration(r.started_at, r.finished_at)}
                 {r.tokens_in + r.tokens_out > 0 &&
                   ` · tokens ${r.tokens_in + r.tokens_out}`}

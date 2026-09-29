@@ -1,3 +1,4 @@
+import { getTranslation } from '@/lib/i18n-server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getDigestDetail } from '@/lib/queries'
@@ -20,6 +21,8 @@ export default async function DigestPage({
 }: {
   params: Promise<{ slug: string; date: string }>
 }) {
+  const t = await getTranslation()
+
   const { slug, date } = await params
   const digest = await getDigestDetail(slug, date)
   if (!digest) notFound()
@@ -29,12 +32,12 @@ export default async function DigestPage({
   return (
     <main style={{ maxWidth: 720 }}>
       <div style={{ padding: '20px 0 4px' }}>
-        <BackLink href={`/k/${slug}`}>返回时间线</BackLink>
+        <BackLink href={`/k/${slug}`}>{t("返回时间线")}</BackLink>
       </div>
 
       <header style={{ padding: '4px 0 16px' }}>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 6px' }}>
-          {formatDigestDate(digest.digest_date)}
+          {formatDigestDate(digest.digest_date, t)}
         </p>
         <h1 style={{ fontSize: 25, fontWeight: 600, margin: 0, textWrap: 'balance' }}>
           {digest.title}
@@ -62,7 +65,7 @@ export default async function DigestPage({
           }}
         >
           <span style={{ fontWeight: 600, color: 'var(--accent)' }}>
-            读完整稿（{readable} 篇全文）→
+            {t("读完整稿（")}{readable} {t("篇全文）→")}
           </span>
           <span
             style={{
@@ -72,7 +75,7 @@ export default async function DigestPage({
               marginTop: 2,
             }}
           >
-            把今天抓到的正文按顺序铺在一页里，不用逐条点开
+            {t("把今天抓到的正文按顺序铺在一页里，不用逐条点开")}
           </span>
         </Link>
       )}
@@ -91,7 +94,7 @@ export default async function DigestPage({
       <hr style={{ border: 0, borderTop: '1px solid var(--border)', margin: '24px 0 16px' }} />
 
       <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 12px' }}>
-        本期条目（{digest.items.length}）
+        {t("本期条目（")}{digest.items.length}）
       </h2>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -106,27 +109,27 @@ export default async function DigestPage({
 
                 <p style={{ margin: '0 0 6px', fontSize: 13, color: 'var(--text-subtle)' }}>
                   {cleanDomain(item.source_domain)}
-                  {item.published_at && ` · ${relativeTime(item.published_at)}`}
+                  {item.published_at && ` · ${relativeTime(item.published_at, t)}`}
                   {' · '}
-                  {FULLTEXT_LABEL[item.fulltext_status]}
+                  {t(FULLTEXT_LABEL[item.fulltext_status])}
                   {item.image_count > 0 &&
                     (item.fulltext_status === 'purged'
-                      ? ` · 曾含 ${item.image_count} 张配图`
-                      : ` · ${item.image_count} 张配图`)}
+                      ? t(" · 曾含 {0} 张配图", item.image_count)
+                      : t(" · {0} 张配图", item.image_count))}
                 </p>
 
                 <div style={{ display: 'flex', gap: 14, fontSize: 13 }}>
                   <a href={item.url} target="_blank" rel="noopener noreferrer">
-                    原文 ↗
+                    {t("原文 ↗")}
                   </a>
                   {item.fulltext_status === 'ok' ? (
-                    <Link href={`/item/${item.id}`}>存档</Link>
+                    <Link href={`/item/${item.id}`}>{t("存档")}</Link>
                   ) : (
                     <span
                       style={{ color: 'var(--text-subtle)' }}
-                      title={FULLTEXT_LABEL[item.fulltext_status]}
+                      title={t(FULLTEXT_LABEL[item.fulltext_status])}
                     >
-                      存档
+                      {t("存档")}
                     </span>
                   )}
                 </div>

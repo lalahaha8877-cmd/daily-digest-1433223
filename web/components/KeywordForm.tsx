@@ -1,5 +1,8 @@
 'use client'
 
+import { useTranslation } from '@/components/LanguageProvider'
+
+
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ApiError, apiSend } from '@/lib/api'
@@ -12,19 +15,6 @@ import type { KeywordDetail, Source, SourceType } from '@/lib/types'
  * 校验只做即时反馈，真正把关的是服务端的 lib/validate.ts（§6.1：
  * 所有写操作在服务端二次校验，不信任前端）。
  */
-
-const TYPE_OPTIONS: ReadonlyArray<{ value: SourceType; label: string }> = [
-  { value: 'gnews', label: 'Google News 搜索' },
-  { value: 'rss', label: 'RSS / Atom 订阅' },
-  { value: 'listing', label: '文章列表页' },
-  { value: 'websearch', label: 'Claude 联网搜索' },
-]
-
-const SCHEDULE_OPTIONS = [
-  { value: 'daily' as const, label: '每天' },
-  { value: 'weekly' as const, label: '每周一' },
-  { value: 'monthly' as const, label: '每月 1 号' },
-]
 
 /** 新增一行时的默认值。gnews 排第一、也是默认 —— 它只要填检索词，不用用户自己去找 RSS 地址。 */
 function blankSource(type: SourceType, query: string): Source {
@@ -55,6 +45,8 @@ export default function KeywordForm({
   mode: 'create' | 'edit'
   initial?: KeywordDetail
 }) {
+  const t = useTranslation()
+
   const router = useRouter()
 
   const [name, setName] = useState(initial?.name ?? '')
@@ -106,21 +98,21 @@ export default function KeywordForm({
       }
       router.refresh()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : '保存失败，请重试')
+      setError(err instanceof ApiError ? err.message : "保存失败，请重试")
       setSaving(false)
     }
   }
 
   return (
     <form onSubmit={submit}>
-      <Field label="名称" required hint="显示用，比如「AI Agent 新进展」">
+      <Field label={t("名称")} required hint={t("显示用，比如「AI Agent 新进展」")}>
         {({ id, describedBy }) => (
           <Input id={id} describedBy={describedBy} value={name} onChange={setName} />
         )}
       </Field>
 
       {mode === 'create' && (
-        <Field label="网址标识（slug）" hint="留空自动生成。建好之后不能再改 —— 改了会让已有链接失效">
+        <Field label={t("网址标识（slug）")} hint={t("留空自动生成。建好之后不能再改 —— 改了会让已有链接失效")}>
           {({ id, describedBy }) => (
             <Input
               id={id}
@@ -133,7 +125,7 @@ export default function KeywordForm({
         </Field>
       )}
 
-      <Field label="检索词" required hint="实际拿去搜索和判断相关性用的词">
+      <Field label={t("检索词")} required hint={t("实际拿去搜索和判断相关性用的词")}>
         {({ id, describedBy }) => (
           <Input id={id} describedBy={describedBy} value={query} onChange={setQuery} />
         )}
@@ -150,8 +142,8 @@ export default function KeywordForm({
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 180px' }}>
           <Field
-            label="保留天数"
-            hint={`稳态约 ${est.fulltextMb.toFixed(1)} MB 全文 + ${est.imagesMb.toFixed(0)} MB 配图`}
+            label={t("保留天数")}
+            hint={t("稳态约 {0} MB 全文 + {1} MB 配图", est.fulltextMb.toFixed(1), est.imagesMb.toFixed(0))}
           >
             {({ id, describedBy }) => (
               <Input
@@ -167,7 +159,7 @@ export default function KeywordForm({
           </Field>
         </div>
         <div style={{ flex: '1 1 180px' }}>
-          <Field label="每次最多条目" hint="1–20，超出的只入库不进简报">
+          <Field label={t("每次最多条目")} hint={t("1–20，超出的只入库不进简报")}>
             {({ id, describedBy }) => (
               <Input
                 id={id}
@@ -193,8 +185,8 @@ export default function KeywordForm({
             fontSize: 14,
           }}
         >
-          <Switch checked={enabled} onChange={setEnabled} label="启用这个关键词" />
-          <span>{enabled ? '已启用，每天自动采集' : '已停用，不再采集'}</span>
+          <Switch checked={enabled} onChange={setEnabled} label={t("启用这个关键词")} />
+          <span>{enabled ? t("已启用，每天自动采集") : t("已停用，不再采集")}</span>
         </div>
       )}
 
@@ -211,16 +203,16 @@ export default function KeywordForm({
             margin: '0 0 16px',
           }}
         >
-          {error}
+          {t(error)}
         </p>
       )}
 
       <div style={{ display: 'flex', gap: 10 }}>
         <Button type="submit" variant="primary" loading={saving}>
-          {mode === 'create' ? '创建关键词' : '保存'}
+          {mode === 'create' ? t("创建关键词") : t("保存")}
         </Button>
         <Button onClick={() => router.back()} disabled={saving}>
-          取消
+          {t("取消")}
         </Button>
       </div>
     </form>
@@ -240,13 +232,28 @@ function SourceEditor({
   onRemove: (i: number) => void
   onAdd: () => void
 }) {
+  const t = useTranslation()
+
+  const TYPE_OPTIONS: ReadonlyArray<{ value: SourceType; label: string }> = [
+    { value: 'gnews', label: t("Google News 搜索") },
+    { value: 'rss', label: t("RSS / Atom 订阅") },
+    { value: 'listing', label: t("文章列表页") },
+    { value: 'websearch', label: t("Claude 联网搜索") },
+  ]
+
+  const SCHEDULE_OPTIONS = [
+    { value: 'daily' as const, label: t("每天") },
+    { value: 'weekly' as const, label: t("每周一") },
+    { value: 'monthly' as const, label: t("每月 1 号") },
+  ]
+
   return (
     <div style={{ marginBottom: 18 }}>
       <p style={{ fontSize: 14, fontWeight: 500, margin: '0 0 4px' }}>
-        发现源<span aria-hidden style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span>
+        {t("发现源")}<span aria-hidden style={{ color: 'var(--danger)', marginLeft: 3 }}>*</span>
       </p>
       <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 10px' }}>
-        决定「去哪里找文章」。不确定就保留 Google News —— 只要填检索词，不用自己找 RSS 地址。
+        {t("决定「去哪里找文章」。不确定就保留 Google News —— 只要填检索词，不用自己找 RSS 地址。")}
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -272,9 +279,9 @@ function SourceEditor({
                 size="sm"
                 variant="ghost"
                 onClick={() => onRemove(i)}
-                title="删除这个来源"
+                title={t("删除这个来源")}
               >
-                移除
+                {t("移除")}
               </Button>
             </div>
 
@@ -292,7 +299,7 @@ function SourceEditor({
               <Input
                 value={s.query ?? ''}
                 onChange={(v) => onPatch(i, { query: v })}
-                placeholder="要搜索的词"
+                placeholder={t("要搜索的词")}
               />
             )}
 
@@ -311,7 +318,7 @@ function SourceEditor({
                     margin: '8px 0 0',
                   }}
                 >
-                  这是唯一按次计费的来源（约 $0.01/次），建议选「每周一」。
+                  {t("这是唯一按次计费的来源（约 $0.01/次），建议选「每周一」。")}
                 </p>
               </>
             )}
@@ -329,12 +336,12 @@ function SourceEditor({
               <Switch
                 checked={s.allow_fulltext}
                 onChange={(v) => onPatch(i, { allow_fulltext: v })}
-                label="抓取全文"
+                label={t("抓取全文")}
               />
               <span>
                 {s.allow_fulltext
-                  ? '抓取全文（仍会先查 robots.txt）'
-                  : '只保留标题和摘要，不抓全文'}
+                  ? t("抓取全文（仍会先查 robots.txt）")
+                  : t("只保留标题和摘要，不抓全文")}
               </span>
             </div>
           </div>
@@ -343,7 +350,7 @@ function SourceEditor({
 
       <div style={{ marginTop: 10 }}>
         <Button size="sm" onClick={onAdd}>
-          ＋ 添加来源
+          {t("＋ 添加来源")}
         </Button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { getTranslation } from '@/lib/i18n-server'
 import { notFound } from 'next/navigation'
 import { getDayFulltext } from '@/lib/queries'
 import MarkdownView from '@/components/MarkdownView'
@@ -18,6 +18,8 @@ export default async function FullTextPage({
 }: {
   params: Promise<{ slug: string; date: string }>
 }) {
+  const t = await getTranslation()
+
   const { slug, date } = await params
   const data = await getDayFulltext(slug, date)
   if (!data) notFound()
@@ -29,7 +31,7 @@ export default async function FullTextPage({
   return (
     <main>
       <div style={{ padding: '20px 0 4px' }}>
-        <BackLink href={`/k/${slug}/${date}`}>返回简报</BackLink>
+        <BackLink href={`/k/${slug}/${date}`}>{t("返回简报")}</BackLink>
       </div>
 
       <header
@@ -40,21 +42,19 @@ export default async function FullTextPage({
         }}
       >
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 6px' }}>
-          {formatDigestDate(digest.digest_date)} · 完整稿
-        </p>
+          {formatDigestDate(digest.digest_date, t)} {t("· 完整稿")}</p>
         <h1 style={{ fontSize: 25, fontWeight: 600, margin: '0 0 8px', textWrap: 'balance' }}>
           {digest.title}
         </h1>
         <p style={{ fontSize: 13, color: 'var(--text-subtle)', margin: 0 }}>
-          共 {articles.length} 篇，其中 {readable.length} 篇有存档全文
-          {unreadable.length > 0 && ` · ${unreadable.length} 篇只有标题`}
+          {t("共")}{articles.length} {t("篇，其中")}{readable.length} {t("篇有存档全文")}{unreadable.length > 0 && t(" · {0} 篇只有标题", unreadable.length)}
         </p>
       </header>
 
       {/* 目录：篇数多时能快速跳转 */}
       {readable.length > 2 && (
         <nav
-          aria-label="本页目录"
+          aria-label={t("本页目录")}
           style={{
             background: 'var(--surface-sunken)',
             border: '1px solid var(--border)',
@@ -71,7 +71,7 @@ export default async function FullTextPage({
               letterSpacing: '.06em',
             }}
           >
-            本页目录
+            {t("本页目录")}
           </p>
           <ol style={{ margin: 0, paddingLeft: 20, fontSize: 14 }}>
             {readable.map(({ item }) => (
@@ -101,11 +101,11 @@ export default async function FullTextPage({
 
           <p style={{ fontSize: 13, color: 'var(--text-subtle)', margin: '0 0 20px' }}>
             {cleanDomain(item.source_domain)}
-            {item.published_at && ` · 发布于 ${relativeTime(item.published_at)}`}
-            {item.image_count > 0 && ` · ${item.image_count} 张配图`}
+            {item.published_at && t(" · 发布于 {0}", relativeTime(item.published_at, t))}
+            {item.image_count > 0 && t(" · {0} 张配图", item.image_count)}
             {'  '}
             <a href={item.url} target="_blank" rel="noopener noreferrer">
-              查看原文 ↗
+              {t("查看原文 ↗")}
             </a>
           </p>
 
@@ -125,10 +125,9 @@ export default async function FullTextPage({
           }}
         >
           <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>
-            以下 {unreadable.length} 篇没有存档全文
-          </h2>
+            {t("以下")}{unreadable.length} {t("篇没有存档全文")}</h2>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 12px' }}>
-            多半是付费墙或源站不允许抓取。标题和链接仍然保留。
+            {t("多半是付费墙或源站不允许抓取。标题和链接仍然保留。")}
           </p>
           {unreadable.map(({ item }) => (
             <p key={item.id} style={{ margin: '0 0 8px', fontSize: 14 }}>
@@ -137,7 +136,7 @@ export default async function FullTextPage({
               <span style={{ fontSize: 13, color: 'var(--text-subtle)' }}>
                 {cleanDomain(item.source_domain)}{' '}
                 <a href={item.url} target="_blank" rel="noopener noreferrer">
-                  原文 ↗
+                  {t("原文 ↗")}
                 </a>
               </span>
             </p>
@@ -154,7 +153,7 @@ export default async function FullTextPage({
           color: 'var(--text-subtle)',
         }}
       >
-        本页为个人阅读存档（含文字与配图），版权归原作者所有。请以各篇原文为准。
+        {t("本页为个人阅读存档（含文字与配图），版权归原作者所有。请以各篇原文为准。")}
       </footer>
     </main>
   )

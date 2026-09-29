@@ -1,3 +1,4 @@
+import { getTranslation } from '@/lib/i18n-server'
 import { notFound } from 'next/navigation'
 import { getItemFulltext } from '@/lib/queries'
 import MarkdownView from '@/components/MarkdownView'
@@ -6,6 +7,8 @@ import { BackLink, cleanDomain, relativeTime } from '@/components/ui'
 export const dynamic = 'force-dynamic'
 
 export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getTranslation()
+
   const { id } = await params
   const item = await getItemFulltext(id)
   if (!item) notFound()
@@ -17,7 +20,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
   return (
     <main>
       <div style={{ padding: '20px 0 4px' }}>
-        <BackLink href={backHref}>返回简报</BackLink>
+        <BackLink href={backHref}>{t("返回简报")}</BackLink>
       </div>
 
       <header
@@ -32,12 +35,12 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         </h1>
         <p style={{ fontSize: 13, color: 'var(--text-subtle)', margin: 0 }}>
           {cleanDomain(item.source_domain)}
-          {item.published_at && ` · 发布于 ${relativeTime(item.published_at)}`}
-          {` · 存档于 ${relativeTime(item.discovered_at)}`}
-          {item.fetch_tier && ` · 抓取方式 ${item.fetch_tier}`}
+          {item.published_at && t(" · 发布于 {0}", relativeTime(item.published_at, t))}
+          {t(" · 存档于 {0}", relativeTime(item.discovered_at, t))}
+          {item.fetch_tier && t(" · 抓取方式 {0}", item.fetch_tier)}
           {'  '}
           <a href={item.url} target="_blank" rel="noopener noreferrer">
-            查看原文 ↗
+            {t("查看原文 ↗")}
           </a>
         </p>
       </header>
@@ -59,40 +62,39 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           color: 'var(--text-subtle)',
         }}
       >
-        本页为个人阅读存档（含文字与配图），版权归原作者所有。请以
-        <a href={item.url} target="_blank" rel="noopener noreferrer">
-          原文
+        {t("本页为个人阅读存档（含文字与配图），版权归原作者所有。请以")}<a href={item.url} target="_blank" rel="noopener noreferrer">
+          {t("原文")}
         </a>
-        为准。
+        {t("为准。")}
       </footer>
     </main>
   )
 }
 
-function UnavailableNotice({
+async function UnavailableNotice({
   item,
 }: {
   item: Awaited<ReturnType<typeof getItemFulltext>>
 }) {
+  const t = await getTranslation()
+
   if (!item) return null
 
   const messages: Record<string, string> = {
-    purged: `这篇的存档已按保留策略（${item.keyword.retention_days} 天）清理${
-      item.image_count > 0 ? `（含 ${item.image_count} 张配图）` : ''
-    }`,
-    failed: `抓取失败${item.fetch_error ? `：${item.fetch_error}` : ''}`,
-    skipped: '该来源不允许抓取全文',
-    pending: '正在处理中，稍后刷新看看',
+    purged: t("这篇的存档已按保留策略（{0} 天）清理{1}", item.keyword.retention_days, item.image_count > 0 ? t("（含 {0} 张配图）", item.image_count) : ''),
+    failed: t("抓取失败{0}", item.fetch_error ? `：${item.fetch_error}` : ''),
+    skipped: t("该来源不允许抓取全文"),
+    pending: t("正在处理中，稍后刷新看看"),
   }
 
   return (
     <div style={{ textAlign: 'center', padding: '48px 20px' }}>
       <p style={{ color: 'var(--text)', margin: '0 0 10px' }}>
-        {messages[item.fulltext_status] ?? '没有可显示的存档'}
+        {messages[item.fulltext_status] ?? t("没有可显示的存档")}
       </p>
       <p style={{ margin: '0 0 20px' }}>
         <a href={item.url} target="_blank" rel="noopener noreferrer">
-          查看原文 ↗
+          {t("查看原文 ↗")}
         </a>
       </p>
 
@@ -109,7 +111,7 @@ function UnavailableNotice({
           }}
         >
           <p style={{ margin: '0 0 6px', fontSize: 12, color: 'var(--text-subtle)' }}>
-            来源摘要
+            {t("来源摘要")}
           </p>
           {item.rss_summary}
         </blockquote>

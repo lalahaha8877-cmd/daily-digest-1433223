@@ -1,5 +1,8 @@
 'use client'
 
+import { useTranslation } from '@/components/LanguageProvider'
+
+
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ApiError, apiSend } from '@/lib/api'
@@ -13,6 +16,8 @@ import { Button } from '@/components/form'
  * 做乐观更新，因为它们高频且失败无害）。
  */
 export default function KeepItemButton({ id }: { id: string }) {
+  const t = useTranslation()
+
   const router = useRouter()
   const [kept, setKept] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -36,18 +41,18 @@ export default function KeepItemButton({ id }: { id: string }) {
 
   if (kept) {
     return (
-      <span style={{ fontSize: 13, color: 'var(--ok)', whiteSpace: 'nowrap' }}>★ 已保留</span>
+      <span style={{ fontSize: 13, color: 'var(--ok)', whiteSpace: 'nowrap' }}>{t("★ 已保留")}</span>
     )
   }
 
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      <Button size="sm" loading={busy} onClick={keep} title="收藏后不再被自动清理">
-        保留
+      <Button size="sm" loading={busy} onClick={keep} title={t("收藏后不再被自动清理")}>
+        {t("保留")}
       </Button>
       {failed && (
         <span role="alert" style={{ fontSize: 12, color: 'var(--danger)' }}>
-          失败
+          {t("失败")}
         </span>
       )}
     </span>

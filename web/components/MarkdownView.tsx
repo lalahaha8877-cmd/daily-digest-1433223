@@ -1,5 +1,8 @@
 'use client'
 
+import { useTranslation } from '@/components/LanguageProvider'
+
+
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -53,6 +56,8 @@ export default function MarkdownView({ children }: { children: string }) {
 }
 
 function ArticleImage({ src, alt }: { src: string; alt: string }) {
+  const t = useTranslation()
+
   if (!src) return null
   return (
     <figure style={{ margin: '1.1em 0' }}>
@@ -65,7 +70,7 @@ function ArticleImage({ src, alt }: { src: string; alt: string }) {
           onError={(e) => {
             const img = e.currentTarget
             const note = document.createElement('div')
-            note.textContent = '[图片无法加载，可能已过期，刷新页面重试]'
+            note.textContent = t("[图片无法加载，可能已过期，刷新页面重试]")
             note.style.cssText =
               'color:var(--text-subtle);font-size:13px;padding:10px 0;'
             img.replaceWith(note)

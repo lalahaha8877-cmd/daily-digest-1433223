@@ -1,3 +1,4 @@
+import { getTranslation } from '@/lib/i18n-server'
 import { notFound } from 'next/navigation'
 import DeleteKeyword from '@/components/DeleteKeyword'
 import KeywordForm from '@/components/KeywordForm'
@@ -11,6 +12,8 @@ export default async function KeywordSettingsPage({
 }: {
   params: Promise<{ slug: string }>
 }) {
+  const t = await getTranslation()
+
   const { slug } = await params
   const keyword = await getKeywordDetail(slug)
   if (!keyword) notFound()
@@ -22,11 +25,9 @@ export default async function KeywordSettingsPage({
       </div>
 
       <h1 style={{ fontSize: 28, fontWeight: 600, margin: '8px 0 6px', lineHeight: 1.3 }}>
-        关键词设置
-      </h1>
+        {t("关键词设置")}</h1>
       <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '0 0 28px' }}>
-        网址标识 <code style={{ fontFamily: 'var(--font-mono)' }}>{keyword.slug}</code> 不可修改 ——
-        改了会让已有链接失效
+        {t("网址标识")}<code style={{ fontFamily: 'var(--font-mono)' }}>{keyword.slug}</code> {t("不可修改 —— 改了会让已有链接失效")}
       </p>
 
       <KeywordForm mode="edit" initial={keyword} />

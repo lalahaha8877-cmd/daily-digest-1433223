@@ -1,3 +1,4 @@
+import { getTranslation } from '@/lib/i18n-server'
 import Link from 'next/link'
 import { EXPIRY_WARN_DAYS } from '@/lib/expiry'
 import { listExpiringItems } from '@/lib/queries'
@@ -12,6 +13,8 @@ import { listExpiringItems } from '@/lib/queries'
  * 只在真有事时出现才有人看。
  */
 export default async function ExpiringBanner() {
+  const t = await getTranslation()
+
   const groups = await listExpiringItems(EXPIRY_WARN_DAYS)
   const total = groups.reduce((n, g) => n + g.items.length, 0)
   if (total === 0) return null
@@ -19,7 +22,7 @@ export default async function ExpiringBanner() {
   // 最紧急的那条决定措辞：已到期的说「随时」，否则说还剩几天
   const soonest = Math.min(...groups.flatMap((g) => g.items.map((i) => i.days_left)))
   const when =
-    soonest <= 0 ? '下一次采集后就会被清理' : `最快 ${soonest} 天后开始清理`
+    soonest <= 0 ? t("下一次采集后就会被清理") : t("最快 {0} 天后开始清理", soonest)
 
   return (
     <div
@@ -41,10 +44,11 @@ export default async function ExpiringBanner() {
         ⏳
       </span>
       <span>
-        有 <strong>{total}</strong> 篇存档即将到期，{when}。
+        {t("有")}<strong>{total}</strong> {t("篇存档即将到期，")}{when}。
       </span>
       <Link href="/expiring" style={{ marginLeft: 'auto', whiteSpace: 'nowrap' }}>
-        查看并保留 →
+        {t("查看并保留 →")}
+
       </Link>
     </div>
   )

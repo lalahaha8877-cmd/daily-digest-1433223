@@ -1,11 +1,14 @@
+import { getTranslation } from '@/lib/i18n-server'
 import Link from 'next/link'
 import ExpiringBanner from '@/components/ExpiringBanner'
 import { listKeywords } from '@/lib/queries'
-import { Badge, Card, EmptyState, StatusDot, cleanDomain } from '@/components/ui'
+import { Badge, Card, EmptyState, StatusDot } from '@/components/ui'
 
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
+  const t = await getTranslation()
+
   const keywords = await listKeywords(true)
 
   return (
@@ -18,11 +21,11 @@ export default async function HomePage() {
           padding: '28px 0 18px',
         }}
       >
-        <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0 }}>关键词</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0 }}>{t("关键词")}</h1>
         <span style={{ display: 'flex', gap: 16, fontSize: 14 }}>
-          <Link href="/status">运行状态</Link>
+          <Link href="/status">{t("运行状态")}</Link>
           <Link href="/new" style={{ fontWeight: 500 }}>
-            ＋ 新建
+            {t("＋ 新建")}
           </Link>
         </span>
       </header>
@@ -31,8 +34,8 @@ export default async function HomePage() {
 
       {keywords.length === 0 ? (
         <EmptyState
-          title="还没有关键词"
-          hint="添加一个关键词，明天早上就能收到第一份简报。"
+          title={t("还没有关键词")}
+          hint={t("添加一个关键词，明天早上就能收到第一份简报。")}
           action={
             <Link
               href="/new"
@@ -47,7 +50,7 @@ export default async function HomePage() {
                 textDecoration: 'none',
               }}
             >
-              新建关键词
+              {t("新建关键词")}
             </Link>
           }
         />
@@ -72,7 +75,7 @@ export default async function HomePage() {
                     {k.last_run && <StatusDot status={k.last_run.status} showLabel={false} />}
                     <span style={{ fontSize: 17, fontWeight: 600 }}>{k.name}</span>
                     {!k.enabled && (
-                      <span style={{ fontSize: 12, color: 'var(--text-subtle)' }}>已停用</span>
+                      <span style={{ fontSize: 12, color: 'var(--text-subtle)' }}>{t("已停用")}</span>
                     )}
                     <span style={{ marginLeft: 'auto' }}>
                       <Badge count={k.unread_count} />
@@ -81,8 +84,8 @@ export default async function HomePage() {
 
                   <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                     {k.last_digest_date
-                      ? `最近 ${k.last_digest_date} · 共 ${k.total_digests} 篇简报`
-                      : '还没有采集过'}
+                      ? t("最近 {0} · 共 {1} 篇简报", k.last_digest_date, k.total_digests)
+                      : t("还没有采集过")}
                   </div>
                 </Card>
               </div>
